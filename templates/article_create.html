@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if article.url %}
+  <h2>/{{ article.url }}</h2>
+  {% else %}
+  <h2>New Article</h2>
+  {% endif %}
+
+    <form method="post">
+      <div class="form-group">
+        <label for="subject">Subject</label>
+        <input type="text" name="subject" value="{{ article.subject }}">
+        <div class="error">
+          {{ err_subject }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="content">Content</label>
+        <textarea name="content">{{ article.content }}</textarea>
+        <div class="error">
+          {{ err_content }}
+        </div>
+      </div>
+      <input type="submit">
+    </form>
+
+{% endblock %}
