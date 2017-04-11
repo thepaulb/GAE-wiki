@@ -36,14 +36,15 @@ jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(templates), auto
 
 
 #### utils functions
+
 def render_str(template, **params):
 	t = jinja_env.get_template(template)
 	return t.render(params)
 
 
 #### Base handler class
-class Handler(webapp2.RequestHandler):
 
+class Handler(webapp2.RequestHandler):
 	def initialize(self, *a, **kw):
 		webapp2.RequestHandler.initialize(self, *a, **kw)
 		uid = self.read_cookie('user_id')
@@ -76,7 +77,6 @@ class Handler(webapp2.RequestHandler):
 #### Homepage
 
 class HomePage(Handler):
-	
 	def get(self):
 		q = get_latest()
   		articles = list(q)
@@ -115,7 +115,6 @@ def valid_pw(name, password, h):
 
 
 class User(db.Model):
-
 	pw_hash = db.StringProperty(required = True)
 	email = db.StringProperty()
 	name = db.StringProperty(required = True)
@@ -132,7 +131,6 @@ class User(db.Model):
 
 
 class Signup(Handler):
-
 	def get(self):
 		return self.render("signup.html")
 
@@ -174,7 +172,6 @@ class Signup(Handler):
 
 
 class Login(Handler):
-	
 	def get(self):
 		return self.render("login.html")
 
@@ -191,7 +188,6 @@ class Login(Handler):
 
 
 class Logout(Handler):
-	
 	def get(self):
 		self.logout()
 		self.redirect("/")
@@ -253,7 +249,6 @@ class Wiki(db.Model):
 
 
 class Article(db.Model):
-
 	content = db.TextProperty(required = True)
 	subject = db.StringProperty()
 	created = db.DateTimeProperty(auto_now_add = True)
@@ -266,7 +261,6 @@ class Article(db.Model):
 
 
 class ViewPage(Handler):
-
 	def get(self, url):
   		a = get_article(url)
 
@@ -284,7 +278,6 @@ class ViewPage(Handler):
 
 
 class EditPage(Handler):
-	
 	def get(self, url):
 		if not self.user:
 			self.redirect("/login")
