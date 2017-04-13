@@ -13,6 +13,7 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
 	font-size: 32px;
 	text-align: center;
+	margin-top: 16px;
 }
 
 h2 {
@@ -51,6 +52,13 @@ nav ul {
 
 nav li {
 	list-style: none;
+	display: block;
+	float: left;
+	margin-left: 8px;
+}
+
+nav li a {
+	line-height: 1;
 	display: inline-block;
 }
 
@@ -92,3 +100,32 @@ textarea {
 .txt-r {
 	text-align: right;
 }
+
+.history, .summary__item {
+	margin: 0;
+	padding: 0;
+}
+
+.history {
+	width: 100%;
+}
+
+.summary__item {
+	list-style: none;
+}
+
+.summary__item span {
+	display: inline-block;
+	overflow: hidden;
+}
+
+.edit {
+	margin-right: 16px;
+}
+
+.nav__item--view {
+	margin-right: 16px;
+	padding-left: 9px;
+	border-left: solid 1px #666;
+}
+

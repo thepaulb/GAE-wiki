@@ -212,8 +212,29 @@ def age_get(key):
 
 	return val, age
 
+def create_revision(article):
+	q = get_revisions(article)
+	l = len(list(q))
+	r = Revision(version = l + 1, parent = article.key(), content = article.content,subject = article.subject, author = article.author, url = article.url)
+	r.put()
+	return str(r.key().id())
+
+def get_revision(article, version):
+	q = db.GqlQuery("SELECT * FROM Revision WHERE ANCESTOR IS :1 AND version = :2", article, int(version))
+	return q
+
+def get_revisions(article):
+	q = db.GqlQuery("SELECT * FROM Revision WHERE ANCESTOR IS :1 ORDER BY created DESC", article)
+	return q
+
 def add_article(article):
 	article.put()
+	# create revision
+	create_revision(article)
+	# update the cache
+	mc_key = "ART_"+article.url
+	age_set(mc_key, article)
+	get_latest(update = True) 
 	return str(article.key().id())
 
 def get_article(url):
@@ -256,15 +277,27 @@ class Article(db.Model):
 	url = db.StringProperty(required = True)
 
 	def render(self):
-		self._render_text = self.content.replace('\n', '<br>')
+		self._render_text = self.content.replace('\n', '<br />')
 		return render_str("article.html", article = self)
+
+
+class Revision(Article):
+	version = db.IntegerProperty()
+
+	def render_summary(self):
+		return render_str("summary.html", article = self)
+
+	def _render_time(self):
+		return int(time.mktime(self.created.timetuple()))
 
 
 class ViewPage(Handler):
 	def get(self, url):
   		a = get_article(url)
-
+  		v = self.request.get('v')
 		if a: 
+			if v:
+				a = get_revision(a, v).get()
 			self.render("article_permalink.html", user = self.user, article = a)
 		else:
 			# if logged in redirect to the edit page
@@ -304,6 +337,16 @@ class EditPage(Handler):
 		add_article(a)
 		self.redirect("/%s" % url)	
 
+#### Archive
+
+class History(Handler):
+	def get(self, url):
+		if not self.user:
+			self.redirect("/login")
+
+		a = get_article(url)
+		q = get_revisions(a)
+		self.render("history.html", user = self.user, article = a, history = q)
 
 #### Lets go!
 
@@ -314,4 +357,5 @@ app = webapp2.WSGIApplication([ ('/', HomePage),
 								('/login', Login), 
 								('/logout', Logout), 
 								('/_edit/'+RE_URL, EditPage), 
-								('/'+RE_URL, ViewPage)], debug=True)
+								('/'+RE_URL, ViewPage),
+								('/_history/'+RE_URL, History)], debug=True)

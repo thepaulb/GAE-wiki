@@ -8,10 +8,17 @@
 	<body>
 		<div class="container">
 			<nav class="clearfix">
-				<ul>	
+				<ul class="clearfix">
 					{% if user and article %}
-					<li>
+					<li class="nav__item--edit">
 						<a href="/_edit/{{ article.url }}">Edit</a>
+					</li>
+					<li class="nav__item--view">
+						{% if history %}
+						<a href="/{{ article.url }}">View</a>
+						{% else %}	
+						<a href="/_history/{{ article.url }}">History</a>
+						{% endif %}
 					</li>
 					{% endif %}
 					{% if user %}
@@ -26,7 +33,6 @@
 						<a href="/signup">Signup</a>
 					</li>
 					{% endif %}
-
 				</ul>
 			</nav>
 		</div>
