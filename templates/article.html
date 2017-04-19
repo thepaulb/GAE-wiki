@@ -1,6 +1,6 @@
 <article>
 	<div  class="article-head">
-		<h2><a href="/{{ article.url }}">{{ article.subject }}</a></h2>
+		<h2><a href="/{{ article.path }}?v={{ article.version }}">{{ article.subject }}</a></h2>
 		<h4>Author: {{ article.author }}</h4>
 		<div class="article-date">{{ article.created.strftime("%A, %d %B %Y") }}</div>
 	</div>

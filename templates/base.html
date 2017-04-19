@@ -11,13 +11,13 @@
 				<ul class="clearfix">
 					{% if user and article %}
 					<li class="nav__item--edit">
-						<a href="/_edit/{{ article.url }}">Edit</a>
+						<a href="/_edit/{{ article.path }}">Edit</a>
 					</li>
 					<li class="nav__item--view">
 						{% if history %}
-						<a href="/{{ article.url }}">View</a>
+						<a href="/{{ article.path }}">View</a>
 						{% else %}	
-						<a href="/_history/{{ article.url }}">History</a>
+						<a href="/_history/{{ article.path }}">History</a>
 						{% endif %}
 					</li>
 					{% endif %}

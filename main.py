@@ -78,8 +78,7 @@ class Handler(webapp2.RequestHandler):
 
 class HomePage(Handler):
 	def get(self):
-		q = get_latest()
-  		articles = list(q)
+		articles = get_latest()
 		return self.render("wiki.html", articles = articles, user = self.user)
 
 
@@ -212,141 +211,128 @@ def age_get(key):
 
 	return val, age
 
-def create_revision(article):
-	q = get_revisions(article)
-	l = len(list(q))
-	r = Revision(version = l + 1, parent = article.key(), content = article.content,subject = article.subject, author = article.author, url = article.url)
-	r.put()
-	return str(r.key().id())
-
-def get_revision(article, version):
-	q = db.GqlQuery("SELECT * FROM Revision WHERE ANCESTOR IS :1 AND version = :2", article, int(version))
-	return q
-
-def get_revisions(article):
-	q = db.GqlQuery("SELECT * FROM Revision WHERE ANCESTOR IS :1 ORDER BY created DESC", article)
-	return q
-
 def add_article(article):
 	article.put()
-	# create revision
-	create_revision(article)
-	# update the cache
-	mc_key = "ART_"+article.url
+	mc_key = "%s-%d" % (article.path, article.version)
 	age_set(mc_key, article)
-	get_latest(update = True) 
+	get_latest(update = True)
 	return str(article.key().id())
 
-def get_article(url):
-	mc_key = "ART_"+url
+def get_revisions(path):
+	# return list of article revisions ordered by creation date (decending)
+ 	p = article_key(path)
+	q = db.GqlQuery("SELECT * FROM Article WHERE ANCESTOR IS :1 ORDER BY created DESC", p)
+	return q
+
+def get_revision(path, version = None):
+	# returns latest revision in the absence of a version number
+	mc_key = "%s-%s" % (path, version)
 	article, age = age_get(mc_key)
 
 	if not article:
-		p = Wiki.get_or_insert('wiki', name='Wiki')
-		q = db.GqlQuery("SELECT * FROM Article WHERE ANCESTOR IS :1 AND url = :2", p, url)
-  		article = q.get()
-  		age_set(mc_key, article)
+		p = article_key(path)
 
-  	return article
+		if version:
+			q = db.GqlQuery("SELECT * FROM Article WHERE ANCESTOR IS :1 AND version = :2", p, int(version))
+		else:
+			q = get_revisions(path)	
+		
+		article = q.get()
+	
+	return article 
+
 
 def get_latest(update = False):
-	mc_key = "ARTS"
+	mc_key = "latest"
 	articles, age = age_get(mc_key)
 
 	if not articles or update:
-		p = Wiki.get_or_insert('wiki', name='Wiki')
-		q = db.GqlQuery("SELECT * FROM Article WHERE ANCESTOR IS :1 ORDER BY created DESC", p)
+		q = db.GqlQuery("SELECT * FROM Article ORDER BY created DESC LIMIT 10")
 		articles = list(q)
 		age_set(mc_key, articles)
 
-  	return articles
+	return articles
 
-def create_url(s):
-	return s.replace(" ", "-")
+def create_path(path):
+	# NOTE: maintain path case 
+	return path.replace(" ", "-")
 
-
-class Wiki(db.Model):
-    name = db.StringProperty()
+def article_key(name = 'default'):
+	return db.Key.from_path('Wiki', name)
 
 
 class Article(db.Model):
 	content = db.TextProperty(required = True)
 	subject = db.StringProperty()
 	created = db.DateTimeProperty(auto_now_add = True)
+	version = db.IntegerProperty(required = True)
 	author = db.StringProperty(required = True)
-	url = db.StringProperty(required = True)
+	path = db.StringProperty(required = True)
 
 	def render(self):
 		self._render_text = self.content.replace('\n', '<br />')
 		return render_str("article.html", article = self)
 
-
-class Revision(Article):
-	version = db.IntegerProperty()
-
 	def render_summary(self):
 		return render_str("summary.html", article = self)
 
-	def _render_time(self):
-		return int(time.mktime(self.created.timetuple()))
-
 
 class ViewPage(Handler):
-	def get(self, url):
-  		a = get_article(url)
+	def get(self, path):
   		v = self.request.get('v')
-		if a: 
-			if v:
-				a = get_revision(a, v).get()
-			self.render("article_permalink.html", user = self.user, article = a)
-		else:
-			# if logged in redirect to the edit page
+  		p = create_path(path)
+		r = get_revision(p, v)
+
+  		if r:
+  			self.render("article_permalink.html", user = self.user, article = r)
+  		else:
+  			# if logged in redirect to the edit/create page ..
 			if self.user:
-				new_url = create_url(url)
-				self.redirect("/_edit/%s" % new_url)
+				self.redirect("/_edit/%s" % p)	
 			else:
-				# else go home
-				# TODO: this should 404 
-				self.redirect("/")
+				# .. else go home
+				# TODO: this should 404?
+				self.redirect("/")	
 
 
 class EditPage(Handler):
-	def get(self, url):
+	def get(self, path):
 		if not self.user:
 			self.redirect("/login")
-		
-		# edit/create page
-		a = get_article(url)
-		self.render("article_create.html", user = self.user, article = a)
 
+		v = self.request.get('v')
+		r = get_revision(path, v)
+		self.render("article_create.html", user = self.user, article = r)
 
-	def post(self, url):
-		content = self.request.get("content")
-		subject = self.request.get("subject")
-		a = get_article(url)
+	def post(self, path):
+		v = 1
+		r = get_revision(path)
 
-		if a:
-			# update
-			a.content = content
- 			a.subject = subject
-		else:
-			# create new
-			p = Wiki.get_or_insert('wiki', name='Wiki')
-			a = Article(parent = p, url = url, subject = subject, content = content, author = self.user.name)
-		
+		if r: 
+			v = r.version + 1
+
+		params = dict(path = path)
+		params['author'] = self.user.name
+		params['parent'] = article_key(path)
+		params['subject'] = self.request.get("subject")
+		params['content'] = self.request.get("content")
+		params['version'] = v 
+
+		a = Article(**params)
 		add_article(a)
-		self.redirect("/%s" % url)	
+
+		self.redirect("/%s" % path)	
 
 #### Archive
 
 class History(Handler):
-	def get(self, url):
+	def get(self, path):
 		if not self.user:
 			self.redirect("/login")
 
-		a = get_article(url)
-		q = get_revisions(a)
-		self.render("history.html", user = self.user, article = a, history = q)
+		h = get_revisions(path)
+		a = h.get()
+		self.render("history.html", user = self.user, article = a, history = h)
 
 #### Lets go!
 

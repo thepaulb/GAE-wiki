@@ -21,6 +21,13 @@ indexes:
   - name: created
     direction: desc
 
+- kind: Article
+  ancestor: yes
+  properties:
+  - name: url
+  - name: created
+    direction: desc
+
 - kind: Revision
   ancestor: yes
   properties:

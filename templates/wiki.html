@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-   {% for article in articles %}
-    {{ article.render() | safe }}
-  {% endfor %}
+	<h2>Latest Entries<</h2>
+ 	{% for article in articles %}
+		{{ article.render() | safe }}
+	{% endfor %}
 
 
 {% endblock %}
