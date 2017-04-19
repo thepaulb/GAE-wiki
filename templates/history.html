@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h2>History</h2>
+	<h3>{{ article.subject }}</h3>
+	<table class="history">
+   	{% for version in history %}
+    	{{ version.render_summary() | safe }}
+  	{% endfor %}
+ 	</table>
+{% endblock %}
