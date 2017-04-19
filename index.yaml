@@ -11,6 +11,17 @@ indexes:
 # your application using appcfg.py.
 
 - kind: Article
+  properties:
+  - name: path
+  - name: created
+
+- kind: Article
+  properties:
+  - name: path
+  - name: created
+    direction: desc
+
+- kind: Article
   ancestor: yes
   properties:
   - name: created
@@ -18,6 +29,13 @@ indexes:
 - kind: Article
   ancestor: yes
   properties:
+  - name: created
+    direction: desc
+
+- kind: Article
+  ancestor: yes
+  properties:
+  - name: path
   - name: created
     direction: desc
 

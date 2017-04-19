@@ -62,6 +62,10 @@ nav li a {
 	display: inline-block;
 }
 
+thead td {
+	font-weight: bold;
+}
+
 .clearfix:after {
   content: "";
   display: table;

@@ -2,8 +2,13 @@
 
 {% block content %}
 	<h2>History</h2>
-	<h3>{{ article.subject }}</h3>
+	<h3>/{{ article.path }}</h3>
 	<table class="history">
+	<thead>
+		<tr>
+		<td>Author</td><td>Updated</td><td>Subject</td><td>Summary</td>
+		</tr>
+	</thead>
    	{% for version in history %}
     	{{ version.render_summary() | safe }}
   	{% endfor %}

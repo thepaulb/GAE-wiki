@@ -79,6 +79,8 @@ class Handler(webapp2.RequestHandler):
 class HomePage(Handler):
 	def get(self):
 		articles = get_latest()
+		for a in articles:
+			logging.info(a.path)
 		return self.render("wiki.html", articles = articles, user = self.user)
 
 
@@ -211,11 +213,17 @@ def age_get(key):
 
 	return val, age
 
+def get_parent(entity):
+	p_key = entity.key().parent()
+	return Wiki.all().ancestor(p_key).get()
+
 def add_article(article):
 	article.put()
 	mc_key = "%s-%d" % (article.path, article.version)
+
 	age_set(mc_key, article)
 	get_latest(update = True)
+
 	return str(article.key().id())
 
 def get_revisions(path):
@@ -241,14 +249,21 @@ def get_revision(path, version = None):
 	
 	return article 
 
-
 def get_latest(update = False):
 	mc_key = "latest"
 	articles, age = age_get(mc_key)
 
 	if not articles or update:
-		q = db.GqlQuery("SELECT * FROM Article ORDER BY created DESC LIMIT 10")
-		articles = list(q)
+		articles = []
+		q = db.GqlQuery("SELECT * FROM Wiki ORDER BY updated DESC LIMIT 10")
+
+		for a in q:
+			r = db.GqlQuery("SELECT * FROM Article WHERE path = :1 AND ANCESTOR IS :2 ORDER BY created DESC", a.name, wiki_key())
+			r = r.get()
+			if r:
+				articles.append(r)
+
+		sorted(articles, key = lambda article: article.created, reverse=True)
 		age_set(mc_key, articles)
 
 	return articles
@@ -257,8 +272,16 @@ def create_path(path):
 	# NOTE: maintain path case 
 	return path.replace(" ", "-")
 
+def wiki_key(group = 'default'):
+	return db.Key.from_path('site', group)
+
 def article_key(name = 'default'):
-	return db.Key.from_path('Wiki', name)
+	return Wiki.get_or_insert(name, name = name, parent = wiki_key())
+
+
+class Wiki(db.Model):
+	name = db.StringProperty(required = True)
+	updated = db.DateTimeProperty(auto_now = True)
 
 
 class Article(db.Model):

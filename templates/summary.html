@@ -1,6 +1,7 @@
 <tr class="summary__item">
 	<td class="summary__item-author">{{ article.author }}</td>
 	<td class="summary__item-created">{{ article.created.strftime("%d %B %Y, %H:%M:%S") }}</td>
+	<td class="summary__item-author">{{ article.subject }}</td>
 	<td class="summary__item-content">{{ article.content[:25] | safe }} ...</td>
 	<td><a href="/{{ article.path }}?v={{ article.version }}">view</a> <a href="/_edit/{{ article.path }}?v={{ article.version }}">edit</a></td>
 </tr>
